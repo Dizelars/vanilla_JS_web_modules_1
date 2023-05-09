@@ -1,4 +1,4 @@
-const tabs = (headerSelector, tabSelector, contentSelector, activeClass) => {
+const tabs = (headerSelector, tabSelector, contentSelector, activeClass, display = "block") => {
     const header = document.querySelector(headerSelector),
           tab = document.querySelectorAll(tabSelector),
           content = document.querySelectorAll(contentSelector); // Берем элементы, которые мы передаем внутрь функции tabs() при ее вызове.
@@ -14,7 +14,7 @@ const tabs = (headerSelector, tabSelector, contentSelector, activeClass) => {
     }
 
     function showTabContent(i = 0) { // Работает только если у нас блочные элементы, не флексы. (Для флексов можно поставить проверку, является ли данный блок флексом или блоком)
-        content[i].style.display = "block";
+        content[i].style.display = display;
         tab[i].classList.add(activeClass); // Добавляем класс активности к контенту, который нужно показать(нам приходит его индекс, именно тот, по которому кликнул пользователь).
     }
 
