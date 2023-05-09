@@ -1,6 +1,146 @@
 /******/ (function() { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/js/modules/changeModalState.js":
+/*!********************************************!*\
+  !*** ./src/js/modules/changeModalState.js ***!
+  \********************************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _checkNumInputs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./checkNumInputs */ "./src/js/modules/checkNumInputs.js");
+
+const changeModalState = state => {
+  // Получаем все данные которые хотим собрать от пользователя
+  const windowForm = document.querySelectorAll('.balcon_icons_img'),
+    windowWidth = document.querySelectorAll('#width'),
+    windowHeight = document.querySelectorAll('#height'),
+    windowType = document.querySelectorAll('#view_type'),
+    windowProfile = document.querySelectorAll('.checkbox');
+  (0,_checkNumInputs__WEBPACK_IMPORTED_MODULE_0__["default"])('#width'); // Валидация ширины и высоты, для ввода только чисел. (Отдельный валидирующий модуль)
+  (0,_checkNumInputs__WEBPACK_IMPORTED_MODULE_0__["default"])('#height');
+  function bindActionsToElems(event, elem, prop) {
+    // Универсальная функция, куда мы передаем тип события, элемент по которому происходит событие, и записываем значение в определенное свойство.
+    elem.forEach((item, i) => {
+      item.addEventListener(event, () => {
+        switch (item.nodeName) {
+          // В зависимости от того, на какой элемент кликнул пользователь, мы записываем то или иное значение.
+          case 'SPAN':
+            state[prop] = i;
+            break;
+          case 'INPUT':
+            if (item.getAttribute('type') === 'checkbox') {
+              i === 0 ? state[prop] = "Холодное" : state[prop] = "Теплое";
+              elem.forEach((box, j) => {
+                box.checked = false;
+                if (i == j) {
+                  box.checked = true;
+                }
+              });
+            } else {
+              state[prop] = item.value;
+            }
+            break;
+          case 'SELECT':
+            state[prop] = item.value;
+            break;
+        }
+        console.log(state);
+      });
+    });
+  }
+  bindActionsToElems('click', windowForm, 'form');
+  bindActionsToElems('input', windowWidth, 'width');
+  bindActionsToElems('input', windowHeight, 'height');
+  bindActionsToElems('change', windowType, 'type');
+  bindActionsToElems('change', windowProfile, 'profile');
+};
+/* harmony default export */ __webpack_exports__["default"] = (changeModalState);
+
+/***/ }),
+
+/***/ "./src/js/modules/checkNumInputs.js":
+/*!******************************************!*\
+  !*** ./src/js/modules/checkNumInputs.js ***!
+  \******************************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+const checkNumInputs = selector => {
+  const numInputs = document.querySelectorAll(selector);
+  numInputs.forEach(item => {
+    item.addEventListener('input', () => {
+      item.value = item.value.replace(/\D/, '');
+    });
+  });
+};
+/* harmony default export */ __webpack_exports__["default"] = (checkNumInputs);
+
+/***/ }),
+
+/***/ "./src/js/modules/forms.js":
+/*!*********************************!*\
+  !*** ./src/js/modules/forms.js ***!
+  \*********************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _checkNumInputs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./checkNumInputs */ "./src/js/modules/checkNumInputs.js");
+
+const forms = state => {
+  const form = document.querySelectorAll('form'),
+    inputs = document.querySelectorAll('input');
+  (0,_checkNumInputs__WEBPACK_IMPORTED_MODULE_0__["default"])('input[name="user_phone"]');
+  const messages = {
+    loading: 'Загрузка...',
+    success: 'Спасибо! Мы свяжемся с вами в ближайшее время.',
+    failure: 'Что-то пошло не так...'
+  };
+  const postData = async (url, data) => {
+    document.querySelector('.status').textContent = messages.loading;
+    let res = await fetch(url, {
+      method: "POST",
+      body: data
+    });
+    return await res.text();
+  };
+  const clearInputs = () => {
+    inputs.forEach(item => {
+      item.value = '';
+    });
+  };
+  form.forEach(item => {
+    item.addEventListener('submit', e => {
+      e.preventDefault();
+      let statusMessage = document.createElement('div');
+      statusMessage.classList.add('status');
+      item.appendChild(statusMessage);
+      const formData = new FormData(item);
+      if (item.getAttribute('data-calc') === "end") {
+        // Если в текущей форме есть дата атрибут end, то к ней мы добовляем еще данные.
+        for (let key in state) {
+          formData.append(key, state[key]);
+        }
+      }
+      postData('assets/server.php', formData).then(res => {
+        console.log(res);
+        statusMessage.textContent = messages.success;
+      }).catch(() => statusMessage.textContent = messages.failure).finally(() => {
+        clearInputs();
+        setTimeout(() => {
+          statusMessage.remove();
+        }, 5000);
+      });
+    });
+  });
+};
+/* harmony default export */ __webpack_exports__["default"] = (forms);
+
+/***/ }),
+
 /***/ "./src/js/modules/modals.js":
 /*!**********************************!*\
   !*** ./src/js/modules/modals.js ***!
@@ -11,9 +151,12 @@
 __webpack_require__.r(__webpack_exports__);
 const modals = () => {
   function bindModal(triggerSelector, modalSelector, closeSelector) {
+    let closeClickOverlay = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
     const trigger = document.querySelectorAll(triggerSelector),
       modal = document.querySelector(modalSelector),
-      close = document.querySelector(closeSelector); // Находим все элементы, передаваемые в функцию bindModal()
+      close = document.querySelector(closeSelector),
+      // Находим все элементы, передаваемые в функцию bindModal()
+      windows = document.querySelectorAll('[data-modal]'); // Все модальные окна на странице с атрибутом data-modal
 
     trigger.forEach(item => {
       // Перебираем полученный массив с элементами, на которые вешаем событие клика(при нажатии на которые мы хотим модальное окно)
@@ -24,6 +167,10 @@ const modals = () => {
           e.preventDefault(); // Сбрасываем базовое поведение браузера, так как клик может проходить по ссылке, а она по умолчанию перезагружает страницу.
         }
 
+        windows.forEach(item => {
+          item.style.display = 'none';
+        }); // Скрываем все модальные окна с data-modal при клике.
+
         modal.style.display = "block"; // Модальному окну, меняем свойство display на значение block чтобы модальное окно показалось
         document.body.style.overflow = "hidden"; // Скрываем стандартный скролл у браузера, так как он может появиться при изменении свойства элемента.
       });
@@ -31,14 +178,20 @@ const modals = () => {
 
     close.addEventListener('click', () => {
       // Вешаем событие клик на тот элемент, которым хотим закрывать модальное окно.
+      windows.forEach(item => {
+        item.style.display = 'none';
+      }); // Скрываем все модальные окна с data-modal при клике на крестрик.
       modal.style.display = "none"; // Скрываем модальное окно, переведя его свойство display в значение none
       document.body.style.overflow = ""; // Обнуляем свойство overflow
     });
 
     modal.addEventListener('click', e => {
       // Вешаем клик на все модальное окно
-      if (e.target === modal) {
+      if (e.target === modal && closeClickOverlay) {
         // Если клик был вне модального окна, то мы его скрываем.
+        windows.forEach(item => {
+          item.style.display = 'none';
+        }); // Скрываем все модальные окна с data-modal при клике вне окна.
         modal.style.display = "none";
         document.body.style.overflow = "";
       }
@@ -46,6 +199,9 @@ const modals = () => {
   }
   bindModal('.popup_engineer_btn', '.popup_engineer', '.popup_engineer .popup_close');
   bindModal('.phone_link', '.popup', '.popup .popup_close');
+  bindModal('.popup_calc_btn', '.popup_calc', '.popup_calc_close');
+  bindModal('.popup_calc_button', '.popup_calc_profile', '.popup_calc_profile_close', false);
+  bindModal('.popup_calc_profile_button', '.popup_calc_end', '.popup_calc_end_close', false);
 };
 /* harmony default export */ __webpack_exports__["default"] = (modals);
 
@@ -59,7 +215,8 @@ const modals = () => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-const tabs = (headerSelector, tabSelector, contentSelector, activeClass) => {
+const tabs = function (headerSelector, tabSelector, contentSelector, activeClass) {
+  let display = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "block";
   const header = document.querySelector(headerSelector),
     tab = document.querySelectorAll(tabSelector),
     content = document.querySelectorAll(contentSelector); // Берем элементы, которые мы передаем внутрь функции tabs() при ее вызове.
@@ -76,7 +233,7 @@ const tabs = (headerSelector, tabSelector, contentSelector, activeClass) => {
   function showTabContent() {
     let i = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
     // Работает только если у нас блочные элементы, не флексы. (Для флексов можно поставить проверку, является ли данный блок флексом или блоком)
-    content[i].style.display = "block";
+    content[i].style.display = display;
     tab[i].classList.add(activeClass); // Добавляем класс активности к контенту, который нужно показать(нам приходит его индекс, именно тот, по которому кликнул пользователь).
   }
 
@@ -14271,13 +14428,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _slider__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./slider */ "./src/js/slider.js");
 /* harmony import */ var _modules_modals__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/modals */ "./src/js/modules/modals.js");
 /* harmony import */ var _modules_tabs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/tabs */ "./src/js/modules/tabs.js");
+/* harmony import */ var _modules_forms__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./modules/forms */ "./src/js/modules/forms.js");
+/* harmony import */ var _modules_changeModalState__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./modules/changeModalState */ "./src/js/modules/changeModalState.js");
+
+
 
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  "use strict";
+
+  let modalState = {}; // Состояние модального окна, в котором пользователь что либо выбирает.
+
+  (0,_modules_changeModalState__WEBPACK_IMPORTED_MODULE_4__["default"])(modalState);
   (0,_modules_modals__WEBPACK_IMPORTED_MODULE_1__["default"])();
   (0,_modules_tabs__WEBPACK_IMPORTED_MODULE_2__["default"])('.glazing_slider', '.glazing_block', '.glazing_content', 'active');
   (0,_modules_tabs__WEBPACK_IMPORTED_MODULE_2__["default"])('.decoration_slider', '.no_click', '.decoration_content > div > div', 'after_click');
+  (0,_modules_tabs__WEBPACK_IMPORTED_MODULE_2__["default"])('.balcon_icons', '.balcon_icons_img', '.big_img > img', 'do_image_more', 'inline-block');
+  (0,_modules_forms__WEBPACK_IMPORTED_MODULE_3__["default"])(modalState);
 });
 }();
 /******/ })()
